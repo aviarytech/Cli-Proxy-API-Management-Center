@@ -142,6 +142,12 @@
   }
 }
 
+/* View picker on the tabs row reuses the quiet sort-select treatment. */
+.view {
+  @extend .sort;
+  min-width: 128px;
+}
+
 @media (hover: hover) and (pointer: fine) {
   .clearSearch:hover,
   .sort button[aria-haspopup='listbox']:hover {

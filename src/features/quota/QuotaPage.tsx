@@ -21,19 +21,23 @@ import { useNow } from '@/hooks/useNow';
 import { useRevealGroup } from '@/hooks/motion';
 import { useAuthStore, useQuotaStore, useThemeStore } from '@/stores';
 import type { AuthFileItem, ResolvedTheme } from '@/types';
-import { getQuotaCacheKey } from '@/utils/quota/identity';
+import { getQuotaCacheKey, getQuotaDisplayName } from '@/utils/quota/identity';
 import { ProviderTabs } from '@/features/authFiles/components/ProviderTabs';
 import { QuotaHeader } from './components/QuotaHeader';
 import { QuotaCard } from './components/QuotaCard';
+import { QuotaLedger } from './components/QuotaLedger';
 import { QuotaTimeline } from './components/QuotaTimeline';
 import {
   CARD_ENTRANCE_BUDGET_MS,
   QUOTA_PAGE_SIZE,
   QUOTA_SORT_MODES,
   QUOTA_TAB_ORDER,
+  QUOTA_VIEW_MODES,
   type QuotaSortMode,
   type QuotaTabId,
+  type QuotaViewMode,
 } from './constants';
+import { maskCredentialName } from './ledgerModel';
 import {
   buildTabCounts,
   canRefreshQuotaAfterList,
@@ -58,9 +62,9 @@ const SKELETON_CARD_COUNT = 6;
 
 /**
  * Existing providers display filenames; Devin's card and timeline share an
- * identity-aware display label. Keep the filename fallback stable for memoization.
+ * identity-aware display label. Keep both functions stable for memoization.
  */
-const displayNameFor = (name: string) => name;
+const plainName = (name: string) => name;
 
 export function QuotaPage() {
   const { t } = useTranslation();
@@ -73,6 +77,16 @@ export function QuotaPage() {
   const [tab, setTab] = useState<QuotaTabId>(() => readQuotaUiState()?.tab ?? 'all');
   const [sortMode, setSortMode] = useState<QuotaSortMode>(
     () => readQuotaUiState()?.sortMode ?? 'default'
+  );
+  const [viewMode, setViewMode] = useState<QuotaViewMode>(
+    () => readQuotaUiState()?.viewMode ?? 'ledger'
+  );
+  // Emails are hidden by default so the page is safe to screen-share.
+  const [showEmails, setShowEmails] = useState(() => readQuotaUiState()?.showEmails ?? false);
+  const displayNameFor = showEmails ? plainName : maskCredentialName;
+  const entryDisplayName = useCallback(
+    (entry: QuotaFileEntry) => displayNameFor(getQuotaDisplayName(entry.file)),
+    [displayNameFor]
   );
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
@@ -199,6 +213,24 @@ export function QuotaPage() {
     writeQuotaUiState({ sortMode: next as QuotaSortMode });
   }, []);
 
+  const handleViewModeChange = useCallback((next: string) => {
+    setViewMode(next as QuotaViewMode);
+    writeQuotaUiState({ viewMode: next as QuotaViewMode });
+  }, []);
+
+  const handleToggleEmails = useCallback(() => {
+    setShowEmails((current) => {
+      writeQuotaUiState({ showEmails: !current });
+      return !current;
+    });
+  }, []);
+
+  const viewOptions = useMemo(
+    () =>
+      QUOTA_VIEW_MODES.map((mode) => ({ value: mode, label: t(`quota_management.view_${mode}`) })),
+    [t]
+  );
+
   const sortOptions = useMemo(
     () =>
       QUOTA_SORT_MODES.map((mode) => ({ value: mode, label: t(`quota_management.sort_${mode}`) })),
@@ -320,6 +352,8 @@ export function QuotaPage() {
         attentionCount={attentionCount}
         refreshing={loading || batchLoading}
         disableControls={disableControls}
+        showEmails={showEmails}
+        onToggleEmails={handleToggleEmails}
         onRefreshAll={handleRefreshAll}
       />
 
@@ -333,6 +367,15 @@ export function QuotaPage() {
             resolvedTheme={resolvedTheme}
             onChange={handleTabChange}
           />
+          <div className={styles.view}>
+            <Select
+              value={viewMode}
+              options={viewOptions}
+              onChange={handleViewModeChange}
+              ariaLabel={t('quota_management.view_label')}
+              size="sm"
+            />
+          </div>
         </div>
 
         <div className={styles.toolbar}>
@@ -413,12 +456,24 @@ export function QuotaPage() {
               )
             }
           />
+        ) : viewMode === 'ledger' ? (
+          <QuotaLedger
+            entries={pageItems}
+            quotaFor={getQuota}
+            displayNameFor={entryDisplayName}
+            resolvedTheme={resolvedTheme}
+            canUseActions={canUseActions}
+            resettingName={resettingQuotaName}
+            onRefresh={(entry) => void refreshQuota(entry.file, QUOTA_ADAPTERS[entry.type])}
+            onReset={(entry) => resetQuota(entry.file, QUOTA_ADAPTERS[entry.type])}
+          />
         ) : (
           <div className={styles.grid}>
             {pageItems.map((entry, index) => (
               <QuotaCard
                 key={`${entry.type}:${getQuotaCacheKey(entry.file)}`}
                 entry={entry}
+                displayName={entryDisplayName(entry)}
                 quota={getQuota(entry)}
                 resolvedTheme={resolvedTheme}
                 canRefresh={canUseActions && !entry.file.disabled}

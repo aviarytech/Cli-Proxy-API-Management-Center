@@ -1581,7 +1581,19 @@
     "weekday_wed": "三",
     "weekday_thu": "四",
     "weekday_fri": "五",
-    "weekday_sat": "六"
+    "weekday_sat": "六",
+    "view_label": "视图",
+    "view_ledger": "账本",
+    "view_cards": "卡片",
+    "show_emails": "显示邮箱",
+    "hide_emails": "隐藏邮箱",
+    "ledger_limit": "额度",
+    "ledger_credentials": "{{count}} 个凭证",
+    "ledger_of_capacity": "/ {{capacity}}%",
+    "ledger_no_reset": "暂无待重置",
+    "ledger_no_windows": "未返回额度窗口",
+    "ledger_show": "展开",
+    "ledger_hide": "收起"
   },
   "plugin_management": {
     "title": "插件管理",

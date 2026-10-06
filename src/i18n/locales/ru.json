@@ -1586,7 +1586,19 @@
     "weekday_wed": "Ср",
     "weekday_thu": "Чт",
     "weekday_fri": "Пт",
-    "weekday_sat": "Сб"
+    "weekday_sat": "Сб",
+    "view_label": "Вид",
+    "view_ledger": "Сводка",
+    "view_cards": "Карточки",
+    "show_emails": "Показать email",
+    "hide_emails": "Скрыть email",
+    "ledger_limit": "Квота",
+    "ledger_credentials": "Учётных данных: {{count}}",
+    "ledger_of_capacity": "из {{capacity}}%",
+    "ledger_no_reset": "Сброс не ожидается",
+    "ledger_no_windows": "Окна квот не получены",
+    "ledger_show": "Показать",
+    "ledger_hide": "Скрыть"
   },
   "plugin_management": {
     "title": "Управление плагинами",
